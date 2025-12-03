@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIIsual</title>
+    <!-- VII Favicon (Updated Colors) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2232%22 fill=%22%2313B5EA%22/><text x=%2250%25%22 y=%2250%25%22 dy=%22.35em%22 text-anchor=%22middle%22 font-size=%2228%22 font-family=%22sans-serif%22 font-weight=%22bold%22 fill=%22%23FFFFFF%22>X</text></svg>">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Nunito Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* --- XERO-INSPIRED PALETTE (Light Mode) --- */
+        :root {
+            --color-xero-cyan: #13B5EA;
+            --color-xero-pink: #FF8F9C;
+            --color-xero-yellow: #F2C94C;
+            --color-xero-teal: #4BD4C3;
+            --color-xero-blue: #2D9CDB;
+            
+            --bg-body: #F4F6F8;
+            --bg-panel: #FFFFFF;
+            --text-main: #0B1E33;
+            --text-muted: #64748B;
+            --border-light: #E2E8F0;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        /* --- WALL LOG STYLES --- */
+        #blockLog {
+            display: flex;
+            flex-wrap: wrap-reverse; 
+            align-content: flex-start; 
+            justify-content: flex-start;
+            gap: 2px; 
+            width: 100%; 
+            height: 340px; 
+            overflow: hidden; 
+            background-color: #FFFFFF;
+            padding: 12px;
+            border-radius: 20px; 
+            border: 2px solid var(--border-light);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.03); 
+        }
+
+        .wall-brick {
+            width: 24px; 
+            height: 24px;
+            border-radius: 6px; 
+            cursor: help;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            flex-shrink: 0; 
+        }
+
+        .wall-brick:hover {
+            transform: scale(1.4) rotate(5deg); 
+            z-index: 50;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 12px rgba(19, 181, 234, 0.3);
+        }
+
+        /* Gap Blocks */
+        .gap-brick {
+            width: 24px; 
+            height: 24px;
+            border-radius: 6px;
+            background-color: #F8FAFC; 
+            opacity: 1; 
+            flex-shrink: 0;
+            transition: background-color 0.2s;
+        }
+        
+        .gap-brick:hover {
+            background-color: #E2E8F0;
+        }
+
+        /* --- PALETTE BUTTONS --- */
+        .color-selector-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%; 
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s;
+            border: 2px solid transparent;
+        }
+        .color-selector-btn:hover {
+            transform: scale(1.1);
+        }
+        .color-selector-btn.active {
+            border-color: #fff;
+            box-shadow: 0 0 0 2px var(--color-xero-blue);
+            transform: scale(1.2);
+        }
+        
+        /* --- PROGRESS BAR --- */
+        .progress-bar-container {
+            height: 12px; 
+            background-color: #E2E8F0; 
+            border: 1px solid #CBD5E1; 
+            border-radius: 9999px; 
+            overflow: hidden;
+            margin-top: 0.75rem;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-xero-cyan), var(--color-xero-blue));
+            transition: width 0.5s linear;
+            border-radius: 9999px;
+        }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(11, 30, 51, 0.4); 
+            backdrop-filter: blur(4px);
+            display: flex; justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-content {
+            background-color: #FFFFFF;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1); 
+            max-width: 340px; width: 90%;
+            overflow: hidden;
+            border: 1px solid #E2E8F0;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes modalPop { 
+            0% { transform: scale(0.8); opacity: 0; } 
+            100% { transform: scale(1); opacity: 1; } 
+        }
+
+        /* --- INPUT & PANEL STYLES --- */
+        .glass-panel {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .xero-input {
+            background-color: #F8FAFC;
+            border: 1px solid #CBD5E1;
+            color: var(--text-main);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .xero-input:focus {
+            background-color: #fff;
+            border-color: var(--color-xero-cyan);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(19, 181, 234, 0.15);
+        }
+
+        /* --- CANVAS LAYER --- */
+        #effectCanvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 200;
+        }
+
+        /* Tooltip */
+        .brick-tooltip {
+            visibility: hidden;
+            position: absolute;
+            bottom: 150%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--text-main);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 60;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .brick-tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--text-main) transparent transparent transparent;
+        }
+        .wall-brick:hover .brick-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* History Items */
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #F1F5F9;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .history-circle {
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            display: inline-block;
+            margin-right: 12px;
+        }
+    </style>
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- Firebase Initialization ---
+        // setLogLevel('Debug');
+
+        // *** REPLACE THIS SECTION WITH YOUR KEYS ***
+        const firebaseConfig = {
+            apiKey: "AIzaSyBONfjj-x_jApjSTCPWMfLxpaTX1XBsNnw",
+            authDomain: "viisual-ed775.firebaseapp.com",
+            projectId: "viisual-ed775",
+            storageBucket: "viisual-ed775.firebasestorage.app",
+            messagingSenderId: "929270219324",
+            appId: "1:929270219324:web:8e4e0c25a4449dbf157939"
+        };
+        const appId = 'default-app-id'; 
+        const initialAuthToken = null; 
+        // ******************************************
+
+        // --- XERO PALETTE ---
+        const STARLIGHT_PALETTE_5 = [
+            '#13B5EA', // Cyan
+            '#FF8F9C', // Pink
+            '#F2C94C', // Yellow
+            '#4BD4C3', // Teal
+            '#2D9CDB', // Blue
+        ]; 
+
+        const DEFAULT_COLOR = STARLIGHT_PALETTE_5[0];
+
+        let app, db, auth, userId, logCollectionRef, unsubscribe;
+        let titleFlashInterval = null;
+        let elapsedTimerInterval = null; 
+        const ORIGINAL_TITLE = document.title;
+        let FLASH_TOGGLE = true;
+
+        const STATE = {
+            tasks: [],
+            totalTimeInMinutes: 0,
+            activeSession: null, 
+            reminderTimeout: null, 
+            sessionStartTime: null,
+            activeColor: DEFAULT_COLOR,
+            manualColorSelected: false 
+        };
+
+        let elements = {};
+        
+        // --- HELPER FUNCTIONS ---
+        function timeToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function minutesToHHMM(totalMinutes) {
+            const totalMinutesInt = Math.floor(totalMinutes);
+            const hours = Math.floor(totalMinutesInt / 60);
+            const minutes = Math.floor(totalMinutesInt % 60);
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        }
+
+        function formatDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // --- CANVAS VISUAL EFFECTS ---
+        let animationFrameId;
+        
+        function initCanvas() {
+            const canvas = document.getElementById('effectCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            return { canvas, ctx };
+        }
+
+        function clearCanvas(ctx, canvas) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Effect 1: Spilled (Cyan Splash - CLEAN, NO FADE)
+        function startWaveEffect() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId); // Prevent overlap
+            
+            const { canvas, ctx } = initCanvas();
+            let phase = 0;
+            let waterLevel = canvas.height; 
+            let targetLevel = 0; 
+            let foamParticles = [];
+
+            for (let i = 0; i < 200; i++) {
+                foamParticles.push({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height,
+                    size: Math.random() * 2 + 0.5,
+                    speed: Math.random() * 2 + 1,
+                    offset: Math.random() * Math.PI * 2
+                });
+            }
+
+            function animate() {
+                clearCanvas(ctx, canvas);
+                phase += 0.1; 
+
+                // Slow down slightly near top
+                let dist = waterLevel - targetLevel;
+                let speed = dist * 0.08; 
+                if (speed < 1.5) speed = 1.5; // Min speed to ensure completion
+                waterLevel -= speed;
+
+                // Stop condition: Submerged
+                if (waterLevel <= 0) {
+                    cancelAnimationFrame(animationFrameId);
+                    clearCanvas(ctx, canvas); // Instant vanish
+                    return;
+                }
+
+                drawWater(ctx, canvas, waterLevel, phase, foamParticles, 1.0);
+                animationFrameId = requestAnimationFrame(animate);
+            }
+
+            function drawWater(ctx, canvas, level, ph, foams, alpha) {
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = 'rgba(19, 181, 234, 0.9)'; 
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height);
+                
+                for (let x = 0; x <= canvas.width; x += 10) {
+                    const y = level + Math.sin(x * 0.01 + ph) * 20 + Math.sin(x * 0.03 + ph) * 10;
+                    ctx.lineTo(x, y);
+                }
+                ctx.lineTo(canvas.width, canvas.height);
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                foams.forEach(p => {
+                    const waveY = level + Math.sin(p.x * 0.01 + ph) * 20 + Math.sin(p.x * 0.03 + ph) * 10;
+                    ctx.beginPath();
+                    ctx.arc(p.x, waveY + Math.random() * 30, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1.0;
+            }
+
+            animate();
+        }
+
+        // Effect 2: Collected (Firework)
+        function startFireworkEffect() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId); // Prevent overlap
+            
+            const { canvas, ctx } = initCanvas();
+            let particles = [];
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            for (let i = 0; i < 100; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 15 + 5;
+                const shapeType = Math.floor(Math.random() * 3); 
+                
+                particles.push({
+                    x: centerX,
+                    y: centerY,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    color: STARLIGHT_PALETTE_5[Math.floor(Math.random() * STARLIGHT_PALETTE_5.length)],
+                    size: Math.random() * 6 + 4,
+                    shape: shapeType, 
+                    alpha: 1,
+                    rotation: Math.random() * Math.PI
+                });
+            }
+
+            function animate() {
+                clearCanvas(ctx, canvas);
+                
+                let activeParticles = false;
+
+                particles.forEach(p => {
+                    if (p.alpha <= 0) return;
+                    activeParticles = true;
+
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.2; 
+                    p.vx *= 0.96; 
+                    p.vy *= 0.96;
+                    p.alpha -= 0.015; 
+                    p.rotation += 0.1;
+
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillStyle = p.color;
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = 2;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation);
+
+                    if (p.shape === 0) {
+                        ctx.beginPath();
+                        ctx.arc(0, 0, p.size/2, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (p.shape === 1) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, -p.size/2);
+                        ctx.lineTo(p.size/2, p.size/2);
+                        ctx.lineTo(-p.size/2, p.size/2);
+                        ctx.closePath();
+                        ctx.stroke(); 
+                    } else {
+                        ctx.beginPath();
+                        ctx.moveTo(-p.size/2, 0);
+                        ctx.lineTo(p.size/2, 0);
+                        ctx.moveTo(0, -p.size/2);
+                        ctx.lineTo(0, p.size/2);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                });
+
+                if (!activeParticles) {
+                    cancelAnimationFrame(animationFrameId);
+                    clearCanvas(ctx, canvas);
+                    return;
+                }
+
+                animationFrameId = requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        function playChime() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.01, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.05); 
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5); 
+            osc.start();
+            osc.stop(ctx.currentTime + 1.5);
+        }
+
+        // --- VISUAL EFFECTS ROUTER ---
+        window.playEffect = function(type) {
+            if (type === 'spilled') {
+                startWaveEffect();
+            } else if (type === 'collected') {
+                startFireworkEffect();
+            }
+        }
+        
+        window.triggerTestPopup = function() {
+            showReminderAlert(7);
+        }
+
+        function setActiveColor(color, element, manual = true) {
+            document.querySelectorAll('.color-selector-btn').forEach(btn => btn.classList.remove('active'));
+            STATE.activeColor = color;
+            STATE.manualColorSelected = manual;
+            
+            if (!element) {
+                const btns = Array.from(document.querySelectorAll('.color-selector-btn'));
+                element = btns.find(b => b.style.backgroundColor === color || 
+                                       rgbToHex(b.style.backgroundColor) === color.toLowerCase());
+            }
+            if(element) element.classList.add('active');
+        }
+
+        function rgbToHex(rgb) {
+            if (rgb.startsWith('#')) return rgb;
+            const rgbValues = rgb.match(/\d+/g);
+            if (!rgbValues) return rgb;
+            return "#" + rgbValues.map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+        }
+
+        function renderColorPalette() {
+            if (!elements.colorButtonsContainer) return;
+            elements.colorButtonsContainer.innerHTML = '';
+            
+            STARLIGHT_PALETTE_5.forEach((color) => { 
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'color-selector-btn';
+                btn.style.backgroundColor = color;
+                btn.title = color;
+                
+                if (color === STATE.activeColor) btn.classList.add('active');
+
+                btn.addEventListener('click', () => setActiveColor(color, btn, true));
+                elements.colorButtonsContainer.appendChild(btn);
+            });
+        }
+
+        function exportToCsv() {
+            if (STATE.tasks.length === 0) return;
+            const headers = ["Date", "StartTime", "EndTime", "Duration_Minutes", "TaskDescription", "Color"];
+            let csv = headers.join(',') + '\n';
+            STATE.tasks.forEach(task => {
+                const startMin = timeToMinutes(task.startTime);
+                const endMin = timeToMinutes(task.endTime);
+                const durationMinutes = endMin - startMin;
+                const safeDesc = task.taskDescription ? task.taskDescription.replace(/"/g, '""') : '';
+                const row = [`"${task.date}"`, `"${task.startTime}"`, `"${task.endTime}"`, durationMinutes, `"${safeDesc}"`, `"${task.color}"`].join(',');
+                csv += row + '\n';
+            });
+            const filename = `VIIsual_log_${elements.dateSelector.value}.csv`;
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            if (link.download !== undefined) { 
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+        
+        function startTitleFlash() {
+            if (titleFlashInterval) clearInterval(titleFlashInterval);
+            titleFlashInterval = setInterval(() => {
+                document.title = FLASH_TOGGLE ? `*** CHECK IN ***` : ORIGINAL_TITLE;
+                FLASH_TOGGLE = !FLASH_TOGGLE;
+            }, 500);
+        }
+
+        function stopTitleFlash() {
+            if (titleFlashInterval) {
+                clearInterval(titleFlashInterval);
+                titleFlashInterval = null;
+            }
+            document.title = ORIGINAL_TITLE;
+        }
+        
+        function showReminderAlert(durationMinutes) {
+            elements.sessionStatus.classList.remove('bg-gray-800');
+            elements.sessionStatus.style.backgroundColor = '#FF8F9C'; // Pink alert
+            
+            elements.modalMessage.textContent = `${durationMinutes} min Check-in. I was...`;
+            elements.reminderModal.classList.remove('hidden');
+            startTitleFlash();
+            playChime();
+        }
+
+        function closeReminderAlert() {
+            elements.reminderModal.classList.add('hidden');
+            stopTitleFlash();
+        }
+        
+        function updateElapsedTimer() {
+            if (!STATE.activeSession || !STATE.sessionStartTime) return;
+
+            const now = new Date();
+            const elapsedMs = now.getTime() - STATE.sessionStartTime.getTime();
+            const elapsedSeconds = Math.floor(elapsedMs / 1000);
+            
+            const minutes = Math.floor(elapsedSeconds / 60);
+            const seconds = elapsedSeconds % 60;
+            
+            const reminderDuration = parseInt(elements.customDurationInput.value, 10) || 7; 
+            const totalDurationSeconds = reminderDuration * 60;
+
+            const timeElapsedStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            let progressPercentage = 0;
+            if (totalDurationSeconds > 0) {
+                 progressPercentage = (elapsedSeconds / totalDurationSeconds) * 100;
+                 if (progressPercentage > 100) progressPercentage = 100;
+            }
+            
+            elements.sessionProgressDisplay.textContent = timeElapsedStr;
+            elements.sessionProgressBar.style.width = `${progressPercentage}%`;
+            
+            elements.sessionStatus.textContent = STATE.activeSession.taskDescription;
+            
+            if (minutes >= reminderDuration) {
+                elements.sessionProgressBar.style.backgroundColor = '#FF8F9C'; // Pink overdue
+            } else {
+                elements.sessionProgressBar.style.backgroundColor = STATE.activeSession.color; 
+            }
+        }
+
+        function setupReminder(durationMinutes) {
+            if (STATE.reminderTimeout) clearTimeout(STATE.reminderTimeout);
+            const durationMs = durationMinutes * 60 * 1000;
+            STATE.reminderTimeout = setTimeout(() => {
+                showReminderAlert(durationMinutes);
+            }, durationMs); 
+        }
+
+        function startSession() {
+            if (STATE.activeSession) return;
+
+            const taskDescription = elements.taskDescription.value.trim();
+            
+            if (!STATE.manualColorSelected) {
+                let nextColor = STARLIGHT_PALETTE_5[0]; 
+                if (STATE.tasks.length > 0) {
+                    const sortedTasks = [...STATE.tasks].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                    const lastTask = sortedTasks[sortedTasks.length - 1];
+                    const lastColor = lastTask.color;
+                    let lastIndex = STARLIGHT_PALETTE_5.indexOf(lastColor);
+                    if (lastIndex === -1) lastIndex = 0;
+                    const nextIndex = (lastIndex + 1) % STARLIGHT_PALETTE_5.length;
+                    nextColor = STARLIGHT_PALETTE_5[nextIndex];
+                }
+                setActiveColor(nextColor, null, false);
+            }
+            
+            const color = STATE.activeColor; 
+            const date = elements.dateSelector.value;
+            
+            const rawDuration = elements.customDurationInput.value;
+            const reminderDuration = parseInt(rawDuration, 10);
+
+            const now = new Date();
+            const startTime = now.toTimeString().substring(0, 5);
+            
+            if (!taskDescription || taskDescription === 'Okay, next ...') {
+                elements.logStatus.textContent = 'Enter a task.';
+                setTimeout(() => elements.logStatus.textContent = '', 3000);
+                return;
+            }
+            if (isNaN(reminderDuration) || reminderDuration <= 0) {
+                elements.logStatus.textContent = 'Valid time required.';
+                setTimeout(() => elements.logStatus.textContent = '', 3000);
+                return;
+            }
+
+            STATE.activeSession = { taskDescription, color, startTime, date, reminderDuration }; 
+            STATE.sessionStartTime = now;
+            
+            // UI Lock
+            elements.startSessionBtn.disabled = true;
+            elements.stopSessionBtn.disabled = false;
+            elements.taskDescription.disabled = true;
+            elements.customDurationInput.disabled = true;
+            document.querySelectorAll('.color-selector-btn').forEach(btn => btn.disabled = true);
+            
+            // Visuals
+            elements.sessionStatus.textContent = taskDescription;
+            elements.sessionStatus.style.backgroundColor = '#FFFFFF'; 
+            elements.sessionStatus.style.color = '#0B1E33';
+            elements.sessionStatus.style.border = `2px solid ${color}`;
+            
+            elements.sessionProgressContainer.classList.remove('hidden');
+            elements.sessionProgressDisplay.textContent = `00:00`;
+            elements.sessionProgressBar.style.width = '0%';
+            elements.sessionProgressBar.style.backgroundColor = color;
+
+            if (elapsedTimerInterval) clearInterval(elapsedTimerInterval);
+            elapsedTimerInterval = setInterval(updateElapsedTimer, 500);
+
+            setupReminder(reminderDuration); 
+        }
+
+        async function saveTask(taskData) {
+             try {
+                const docRef = await addDoc(logCollectionRef, taskData);
+                return { ...taskData, id: docRef.id };
+            } catch (e) {
+                console.error("Save Error:", e);
+                throw e;
+            }
+        }
+
+        async function stopSession() {
+            if (!STATE.activeSession) return;
+
+            if (STATE.reminderTimeout) clearTimeout(STATE.reminderTimeout);
+            if (elapsedTimerInterval) clearInterval(elapsedTimerInterval);
+            closeReminderAlert(); 
+
+            const endTime = new Date().toTimeString().substring(0, 5);
+            const startMin = timeToMinutes(STATE.activeSession.startTime);
+            const endMin = timeToMinutes(endTime);
+
+            if (endMin <= startMin) {
+                 elements.logStatus.textContent = 'Too short to log.';
+                 setTimeout(() => elements.logStatus.textContent = '', 3000);
+                 STATE.activeSession = null;
+                 STATE.sessionStartTime = null;
+                 resetSessionUI(); 
+                 return;
+            }
+
+            const taskData = {
+                ...STATE.activeSession,
+                endTime: endTime,
+                category: 'Deep Work', 
+                createdAt: new Date().toISOString()
+            };
+            delete taskData.reminderDuration;
+            delete taskData.sessionStartTime;
+
+            elements.logStatus.textContent = 'Saving...';
+            
+            try {
+                await saveTask(taskData); 
+                elements.logStatus.textContent = 'Saved.'; 
+                setTimeout(() => elements.logStatus.textContent = '', 2000);
+            } catch (e) {
+                elements.logStatus.textContent = 'Error saving.';
+            } finally {
+                STATE.activeSession = null;
+                STATE.sessionStartTime = null;
+                elements.taskDescription.value = ''; 
+                resetSessionUI();
+                elements.customDurationInput.value = '7';
+                STATE.manualColorSelected = false; 
+            }
+        }
+
+        async function handleSpilled() {
+            if (!STATE.activeSession) return;
+            
+            window.playEffect('spilled'); 
+            closeReminderAlert();
+            
+            const startMs = STATE.sessionStartTime.getTime();
+            const durationMs = STATE.activeSession.reminderDuration * 60 * 1000;
+            const idealEndDate = new Date(startMs + durationMs);
+            const idealEndTimeStr = idealEndDate.toTimeString().substring(0, 5);
+            
+            if (elapsedTimerInterval) clearInterval(elapsedTimerInterval);
+            
+            const taskData = {
+                ...STATE.activeSession,
+                endTime: idealEndTimeStr,
+                category: 'Deep Work',
+                createdAt: new Date().toISOString()
+            };
+            
+            delete taskData.reminderDuration;
+            delete taskData.sessionStartTime;
+            
+            try {
+                await saveTask(taskData);
+                elements.logStatus.textContent = 'Spilled. Gap logged.';
+            } catch(e) {
+                console.error(e);
+            } finally {
+                STATE.activeSession = null;
+                STATE.sessionStartTime = null;
+                elements.taskDescription.value = '';
+                resetSessionUI();
+                elements.customDurationInput.value = '7';
+                STATE.manualColorSelected = false;
+            }
+        }
+
+        function handleCollected() {
+            window.playEffect('collected');
+            closeReminderAlert();
+        }
+
+        function resetSessionUI() {
+            elements.startSessionBtn.disabled = false;
+            elements.stopSessionBtn.disabled = true;
+            elements.taskDescription.disabled = false;
+            elements.taskDescription.placeholder = 'Okay, next ...'; 
+            elements.customDurationInput.disabled = false;
+            document.querySelectorAll('.color-selector-btn').forEach(btn => btn.disabled = false);
+
+            elements.sessionStatus.className = "text-center py-2 px-3 rounded-lg bg-gray-100 text-gray-400 font-semibold transition duration-300 shadow-sm border border-gray-300";
+            elements.sessionStatus.style.backgroundColor = '#F8FAFC';
+            elements.sessionStatus.style.border = '1px solid #E2E8F0';
+            elements.sessionStatus.style.color = '#94A3B8';
+            elements.sessionStatus.textContent = 'Progress Bar'; 
+            
+            elements.sessionProgressContainer.classList.add('hidden');
+            elements.taskDescription.focus(); 
+        }
+
+        function renderBlockLog() {
+            elements.blockLog.innerHTML = '';
+            elements.taskListContainer.innerHTML = ''; 
+            
+            let totalTimeInMinutes = 0;
+            
+            if (STATE.tasks.length === 0) {
+                 elements.totalTimeDisplay.textContent = '0h 00m logged';
+                 elements.blockLog.innerHTML = '<div class="w-full h-full flex items-center justify-center text-gray-400 italic">Wall is empty. Build something!</div>';
+                 elements.taskListContainer.innerHTML = '<div class="text-center text-gray-400 text-sm italic py-4">No tasks yet.</div>';
+                 return;
+            }
+            
+            STATE.tasks.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+            STATE.tasks.forEach((task, index) => {
+                const startMinutes = timeToMinutes(task.startTime);
+                const endMinutes = timeToMinutes(task.endTime);
+                const durationMinutes = endMinutes - startMinutes;
+                
+                if (durationMinutes <= 0) return;
+
+                totalTimeInMinutes += durationMinutes;
+
+                const numBlocks = Math.ceil(durationMinutes / 7); 
+                const color = task.color || DEFAULT_COLOR; 
+                const durationFormatted = minutesToHHMM(durationMinutes);
+                const timeInfo = `${task.startTime} - ${task.endTime} (${durationFormatted})`;
+                
+                for (let i = 0; i < numBlocks; i++) {
+                    const brick = document.createElement('div');
+                    brick.className = 'wall-brick';
+                    brick.style.backgroundColor = color;
+                    
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'brick-tooltip';
+                    tooltip.innerHTML = `<strong>${task.taskDescription}</strong><br><span style="font-size:10px; opacity:0.8">${timeInfo}</span>`;
+                    
+                    brick.appendChild(tooltip);
+                    elements.blockLog.appendChild(brick);
+                }
+
+                if (index < STATE.tasks.length - 1) {
+                    const nextTask = STATE.tasks[index + 1];
+                    const nextStart = timeToMinutes(nextTask.startTime);
+                    const gapMinutes = nextStart - endMinutes;
+
+                    if (gapMinutes >= 7) {
+                        const numGapBlocks = Math.floor(gapMinutes / 7);
+                        for (let j = 0; j < numGapBlocks; j++) {
+                            const gapBrick = document.createElement('div');
+                            gapBrick.className = 'gap-brick'; 
+                            gapBrick.title = `Gap: ${gapMinutes} mins`;
+                            elements.blockLog.appendChild(gapBrick);
+                        }
+                    }
+                }
+
+                const listItem = document.createElement('div');
+                listItem.className = 'history-item';
+                listItem.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="history-circle" style="background-color: ${color}"></span>
+                        <span class="text-[#0B1E33] font-bold">${task.taskDescription}</span>
+                    </div>
+                    <div class="text-gray-500 text-xs font-semibold">
+                        ${task.startTime} (${numBlocks} blocks)
+                    </div>
+                `;
+                elements.taskListContainer.appendChild(listItem);
+            });
+
+            const totalHours = Math.floor(totalTimeInMinutes / 60);
+            const remainingMinutes = Math.floor(totalTimeInMinutes % 60);
+            elements.totalTimeDisplay.textContent = `${totalHours}h ${remainingMinutes.toString().padStart(2, '0')}m logged`;
+        }
+        
+        function updateRealTimeClock() {
+            const now = new Date();
+            elements.realTimeClock.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+        setInterval(updateRealTimeClock, 1000);
+        
+        function setupListeners() {
+            if (unsubscribe) unsubscribe();
+
+            const selectedDate = elements.dateSelector.value || formatDate(new Date());
+            const q = query(logCollectionRef, where("date", "==", selectedDate));
+
+            elements.loadingIndicator.classList.remove('hidden');
+            
+            unsubscribe = onSnapshot(q, (querySnapshot) => {
+                STATE.tasks = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (!data.deleted) STATE.tasks.push({ ...data, id: doc.id });
+                });
+                renderBlockLog();
+                elements.loadingIndicator.classList.add('hidden');
+            }, (error) => {
+                console.error("Snapshot Error:", error);
+                elements.loadingIndicator.classList.add('hidden');
+            });
+
+            elements.startSessionBtn.onclick = startSession;
+            elements.stopSessionBtn.onclick = stopSession;
+            elements.logForm.onsubmit = (e) => e.preventDefault();
+        }
+
+        async function initializeFirebase() {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                await new Promise((resolve, reject) => {
+                    if (typeof initialAuthToken !== 'undefined' && initialAuthToken) {
+                        signInWithCustomToken(auth, initialAuthToken).then(resolve).catch(reject);
+                    } else {
+                        signInAnonymously(auth).then(resolve).catch(reject);
+                    }
+                });
+                
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        const currentAppId = typeof appId !== 'undefined' ? appId : 'default-app-id';
+                        const rootPath = `/artifacts/${currentAppId}/public/data/lyubishchev_logs`;
+                        logCollectionRef = collection(db, rootPath);
+                        setupListeners();
+                    }
+                });
+
+            } catch (e) {
+                console.error("Init Error:", e);
+                elements.logStatus.textContent = "Offline Mode / Init Error";
+            }
+        }
+
+        function handleDateChange() { setupListeners(); }
+
+        window.addEventListener('load', () => {
+            elements.realTimeClock = document.getElementById('realTimeClock');
+            elements.logForm = document.getElementById('logForm');
+            elements.blockLog = document.getElementById('blockLog');
+            elements.taskListContainer = document.getElementById('taskListContainer'); 
+            elements.totalTimeDisplay = document.getElementById('totalTime');
+            elements.loadingIndicator = document.getElementById('loadingIndicator');
+            elements.dateSelector = document.getElementById('dateSelector');
+            elements.todayButton = document.getElementById('todayButton');
+            elements.logStatus = document.getElementById('logStatus');
+            elements.startSessionBtn = document.getElementById('startSessionBtn');
+            elements.stopSessionBtn = document.getElementById('stopSessionBtn');
+            elements.sessionStatus = document.getElementById('sessionStatus');
+            elements.taskDescription = document.getElementById('taskDescription');
+            elements.reminderDuration = document.getElementById('reminderDuration');
+            elements.customDurationInput = document.getElementById('customDurationInput');
+            elements.reminderModal = document.getElementById('reminderModal');
+            elements.modalMessage = document.getElementById('modalMessage');
+            
+            elements.spilledBtn = document.getElementById('spilledBtn');
+            elements.collectedBtn = document.getElementById('collectedBtn');
+            
+            elements.exportBtn = document.getElementById('exportBtn');
+            elements.sessionProgressDisplay = document.getElementById('sessionProgressDisplay');
+            elements.sessionProgressBar = document.getElementById('sessionProgressBar');
+            elements.sessionProgressContainer = document.getElementById('sessionProgressContainer');
+            elements.colorButtonsContainer = document.getElementById('colorButtonsContainer');
+
+            updateRealTimeClock();
+            
+            elements.spilledBtn.onclick = handleSpilled;
+            elements.collectedBtn.onclick = handleCollected;
+            
+            elements.exportBtn.onclick = exportToCsv; 
+            renderColorPalette(); 
+            
+            elements.dateSelector.value = formatDate(new Date());
+            elements.dateSelector.addEventListener('change', handleDateChange);
+            elements.todayButton.addEventListener('click', () => {
+                elements.dateSelector.value = formatDate(new Date());
+                handleDateChange();
+            });
+
+            elements.customDurationInput.addEventListener('input', () => {
+                elements.reminderDuration.value = elements.customDurationInput.value;
+            });
+            
+            elements.taskDescription.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); 
+                    startSession();
+                }
+            });
+            
+            elements.customDurationInput.value = '7';
+            elements.reminderDuration.value = '7';
+            
+            resetSessionUI(); 
+            initializeFirebase();
+        });
+    </script>
+</head>
+<body class="min-h-screen">
+
+    <!-- CANVAS LAYER -->
+    <canvas id="effectCanvas"></canvas>
+
+    <div id="reminderModal" class="modal-overlay hidden">
+        <div class="modal-content relative">
+            <div class="p-6">
+                <!-- Dynamic Message -->
+                <p id="modalMessage" class="text-2xl text-gray-800 mb-8 text-center font-bold"></p>
+                
+                <div class="space-y-4">
+                    <!-- Astray Button (X icon) -->
+                    <button id="spilledBtn" class="w-full py-4 bg-gray-100 text-gray-700 font-extrabold rounded-xl shadow-sm hover:bg-gray-200 transition duration-200 flex justify-center items-center space-x-3 border border-gray-300">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 6L6 18" stroke="#F2C94C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M6 6L18 18" stroke="#F2C94C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Astray</span>
+                    </button>
+                    
+                    <!-- On Target Button (Circle Dot icon) -->
+                    <button id="collectedBtn" class="w-full py-4 bg-[#FF8F9C] text-[#0B1E33] font-extrabold rounded-xl shadow-md hover:bg-[#FF6B7D] transition duration-200 flex justify-center items-center space-x-3 transform hover:scale-[1.02]">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="9" stroke="#0B1E33" stroke-width="3"/>
+                            <circle cx="12" cy="12" r="3" fill="#0B1E33"/>
+                        </svg>
+                        <span>On Target</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <header class="shadow-sm border-b border-gray-200 bg-white">
+        <div class="container flex justify-between items-center py-4">
+            <h1 class="text-3xl font-extrabold text-[#13B5EA]">VIIsual</h1>
+            <div class="flex items-center space-x-4">
+                <button onclick="triggerTestPopup()" class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded hover:bg-gray-200 transition">Test Pop-up</button>
+                <div id="realTimeClock" class="text-xl font-bold text-[#0B1E33] font-mono">--:--:--</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
+        
+        <!-- Left Panel: Input -->
+        <div class="glass-panel lg:col-span-1 p-6 h-min">
+            <form id="logForm" class="space-y-5">
+                
+                <div class="log-input">
+                    <div class="flex space-x-2">
+                        <input type="date" id="dateSelector" class="xero-input w-full p-2 font-semibold" required>
+                        <button type="button" id="todayButton" class="w-10 h-10 bg-[#2D9CDB] text-white text-xl font-bold rounded-lg hover:bg-[#13B5EA] transition">今</button>
+                    </div>
+                </div>
+
+                <div class="log-input">
+                    <input type="text" id="taskDescription" placeholder="Okay, next ..." class="xero-input w-full p-3 font-bold" required>
+                </div>
+                
+                <!-- Color Picker -->
+                <div class="log-input flex items-center space-x-4">
+                    <div id="colorButtonsContainer" class="flex flex-wrap items-center space-x-2"></div>
+                </div>
+
+                <!-- Min Input -->
+                <div class="log-input flex items-center space-x-2">
+                    <input type="number" id="customDurationInput" value="7" min="1" placeholder="7" class="xero-input w-16 h-10 p-2 text-center text-base font-bold" required>
+                    <span class="text-sm text-[#64748B] font-bold">Min</span>
+                    <input type="hidden" id="reminderDuration" value="7"> 
+                </div>
+                
+                <!-- Status/Progress Bar -->
+                <div id="sessionStatus" class="text-center py-2 px-3 rounded-lg bg-gray-50 text-gray-400 font-semibold transition duration-300 shadow-sm border border-gray-200">
+                    Progress Bar
+                </div>
+
+                <div id="sessionProgressContainer" class="space-y-2 hidden">
+                    <div class="flex justify-between text-sm font-semibold text-[#0B1E33]">
+                        <span id="sessionProgressDisplay" class="text-base font-bold">00:00</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div id="sessionProgressBar" class="progress-bar-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <button type="button" id="startSessionBtn" class="py-3 bg-[#F2C94C] text-[#0B1E33] font-extrabold rounded-xl shadow-lg hover:bg-[#FFE082] transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Go
+                    </button>
+                    <button type="button" id="stopSessionBtn" disabled class="py-3 bg-[#FF8F9C] text-white font-extrabold rounded-xl shadow-lg hover:bg-[#FF6B7D] transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                        Stop
+                    </button>
+                </div>
+
+                <p id="logStatus" class="text-center text-xs text-[#4BD4C3] h-4 font-bold"></p>
+            </form>
+        </div>
+
+        <!-- Right Panel: Log (Wall) -->
+        <div class="glass-panel lg:col-span-2 space-y-6 p-6">
+            <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
+                <span id="totalTime" class="text-lg font-extrabold text-[#13B5EA]">0h 00m logged</span>
+                
+                <button type="button" id="exportBtn" class="flex items-center justify-center w-8 h-8 bg-white text-gray-600 rounded-md hover:bg-gray-50 transition shadow-sm border border-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="loadingIndicator" class="text-center py-4 text-[#F2C94C] hidden">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F2C94C] mx-auto"></div>
+                Loading...
+            </div>
+            
+            <!-- THE WALL CONTAINER -->
+            <div id="blockLog">
+                <!-- Bricks appear here -->
+            </div>
+            
+            <!-- NEW SECTION: SESSION HISTORY -->
+            <div class="mt-6 pt-6 border-t border-gray-100">
+                <h3 class="text-[#2D9CDB] font-extrabold mb-3">Session History</h3>
+                <div id="taskListContainer" class="space-y-1">
+                    <!-- List items appear here -->
+                </div>
+            </div>
+
+        </div>
+        
+        <footer class="lg:col-span-3 text-center text-xs text-[#64748B] py-4 font-semibold">
+            诚敬公专序勤
+        </footer>
+
+    </main>
+</body>
+</html>
