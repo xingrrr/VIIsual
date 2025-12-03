@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VIIsual</title>
-    <!-- VII Favicon (Updated Colors) -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2232%22 fill=%22%2313B5EA%22/><text x=%2250%25%22 y=%2250%25%22 dy=%22.35em%22 text-anchor=%22middle%22 font-size=%2228%22 font-family=%22sans-serif%22 font-weight=%22bold%22 fill=%22%23FFFFFF%22>X</text></svg>">
+    <!-- VII Favicon (Updated: Xero Pink Circle with VII) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2232%22 fill=%22%23FF8F9C%22/><text x=%2250%25%22 y=%2250%25%22 dy=%22.35em%22 text-anchor=%22middle%22 font-size=%2224%22 font-family=%22Nunito%22 font-weight=%22800%22 fill=%22%23FFFFFF%22>VII</text></svg>">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Nunito Font -->
@@ -47,8 +47,8 @@
             justify-content: flex-start;
             gap: 2px; 
             width: 100%; 
-            height: 340px; 
-            overflow: hidden; 
+            min-height: 340px; 
+            height: auto; 
             background-color: #FFFFFF;
             padding: 12px;
             border-radius: 20px; 
@@ -168,6 +168,17 @@
             box-shadow: 0 0 0 3px rgba(19, 181, 234, 0.15);
         }
 
+        /* Blinking Attention Animation */
+        @keyframes subtlePulse {
+            0% { border-color: #CBD5E1; box-shadow: 0 0 0 0 rgba(255, 143, 156, 0); }
+            50% { border-color: #FF8F9C; box-shadow: 0 0 0 2px rgba(255, 143, 156, 0.2); }
+            100% { border-color: #CBD5E1; box-shadow: 0 0 0 0 rgba(255, 143, 156, 0); }
+        }
+        
+        .input-blink {
+            animation: subtlePulse 2.5s infinite ease-in-out;
+        }
+
         /* --- CANVAS LAYER --- */
         #effectCanvas {
             position: fixed;
@@ -238,10 +249,6 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, where, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // --- Firebase Initialization ---
-        // setLogLevel('Debug');
-
-        // *** REPLACE THIS SECTION WITH YOUR KEYS ***
         const firebaseConfig = {
             apiKey: "AIzaSyBONfjj-x_jApjSTCPWMfLxpaTX1XBsNnw",
             authDomain: "viisual-ed775.firebaseapp.com",
@@ -252,7 +259,6 @@
         };
         const appId = 'default-app-id'; 
         const initialAuthToken = null; 
-        // ******************************************
 
         // --- XERO PALETTE ---
         const STARLIGHT_PALETTE_5 = [
@@ -321,7 +327,7 @@
 
         // Effect 1: Spilled (Cyan Splash - CLEAN, NO FADE)
         function startWaveEffect() {
-            if (animationFrameId) cancelAnimationFrame(animationFrameId); // Prevent overlap
+            if (animationFrameId) cancelAnimationFrame(animationFrameId); 
             
             const { canvas, ctx } = initCanvas();
             let phase = 0;
@@ -343,16 +349,14 @@
                 clearCanvas(ctx, canvas);
                 phase += 0.1; 
 
-                // Slow down slightly near top
                 let dist = waterLevel - targetLevel;
                 let speed = dist * 0.08; 
-                if (speed < 1.5) speed = 1.5; // Min speed to ensure completion
+                if (speed < 1.5) speed = 1.5; 
                 waterLevel -= speed;
 
-                // Stop condition: Submerged
                 if (waterLevel <= 0) {
                     cancelAnimationFrame(animationFrameId);
-                    clearCanvas(ctx, canvas); // Instant vanish
+                    clearCanvas(ctx, canvas); 
                     return;
                 }
 
@@ -388,7 +392,7 @@
 
         // Effect 2: Collected (Firework)
         function startFireworkEffect() {
-            if (animationFrameId) cancelAnimationFrame(animationFrameId); // Prevent overlap
+            if (animationFrameId) cancelAnimationFrame(animationFrameId); 
             
             const { canvas, ctx } = initCanvas();
             let particles = [];
@@ -681,11 +685,12 @@
             STATE.activeSession = { taskDescription, color, startTime, date, reminderDuration }; 
             STATE.sessionStartTime = now;
             
-            // UI Lock
+            // UI Lock & Remove Blinking
             elements.startSessionBtn.disabled = true;
             elements.stopSessionBtn.disabled = false;
             elements.taskDescription.disabled = true;
             elements.customDurationInput.disabled = true;
+            elements.taskDescription.classList.remove('input-blink'); // Stop blinking
             document.querySelectorAll('.color-selector-btn').forEach(btn => btn.disabled = true);
             
             // Visuals
@@ -800,9 +805,44 @@
             }
         }
 
-        function handleCollected() {
+        async function handleCollected() {
+            if (!STATE.activeSession) return;
+
             window.playEffect('collected');
             closeReminderAlert();
+            
+            // Logic: STOP immediately and log the actual time spent so far
+            if (STATE.reminderTimeout) clearTimeout(STATE.reminderTimeout);
+            if (elapsedTimerInterval) clearInterval(elapsedTimerInterval);
+
+            const endTime = new Date().toTimeString().substring(0, 5);
+            // We do NOT start a new timer or keep it running.
+            
+            const taskData = {
+                ...STATE.activeSession,
+                endTime: endTime,
+                category: 'Deep Work', 
+                createdAt: new Date().toISOString()
+            };
+            delete taskData.reminderDuration;
+            delete taskData.sessionStartTime;
+
+            elements.logStatus.textContent = 'Saving...';
+            
+            try {
+                await saveTask(taskData); 
+                elements.logStatus.textContent = 'Saved.'; 
+                setTimeout(() => elements.logStatus.textContent = '', 2000);
+            } catch (e) {
+                elements.logStatus.textContent = 'Error saving.';
+            } finally {
+                STATE.activeSession = null;
+                STATE.sessionStartTime = null;
+                elements.taskDescription.value = ''; 
+                resetSessionUI();
+                elements.customDurationInput.value = '7';
+                STATE.manualColorSelected = false; 
+            }
         }
 
         function resetSessionUI() {
@@ -820,6 +860,9 @@
             elements.sessionStatus.textContent = 'Progress Bar'; 
             
             elements.sessionProgressContainer.classList.add('hidden');
+            
+            // Re-enable blinking when resetting to idle
+            elements.taskDescription.classList.add('input-blink');
             elements.taskDescription.focus(); 
         }
 
@@ -847,7 +890,11 @@
 
                 totalTimeInMinutes += durationMinutes;
 
-                const numBlocks = Math.ceil(durationMinutes / 7); 
+                // ROUNDING LOGIC REVAMP: Math.round instead of ceil
+                // Minimum 1 block if > 0 minutes to avoid disappearing tasks
+                let numBlocks = Math.round(durationMinutes / 7);
+                if (numBlocks === 0 && durationMinutes > 0) numBlocks = 1;
+
                 const color = task.color || DEFAULT_COLOR; 
                 const durationFormatted = minutesToHHMM(durationMinutes);
                 const timeInfo = `${task.startTime} - ${task.endTime} (${durationFormatted})`;
@@ -870,8 +917,8 @@
                     const nextStart = timeToMinutes(nextTask.startTime);
                     const gapMinutes = nextStart - endMinutes;
 
-                    if (gapMinutes >= 7) {
-                        const numGapBlocks = Math.floor(gapMinutes / 7);
+                    if (gapMinutes >= 4) { // Threshold for noticeable gap (approx half a block)
+                        const numGapBlocks = Math.round(gapMinutes / 7);
                         for (let j = 0; j < numGapBlocks; j++) {
                             const gapBrick = document.createElement('div');
                             gapBrick.className = 'gap-brick'; 
@@ -1017,6 +1064,14 @@
                     startSession();
                 }
             });
+
+            // NEW: Enter key on time input also starts session
+            elements.customDurationInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    startSession();
+                }
+            });
             
             elements.customDurationInput.value = '7';
             elements.reminderDuration.value = '7';
@@ -1062,7 +1117,8 @@
 
     <header class="shadow-sm border-b border-gray-200 bg-white">
         <div class="container flex justify-between items-center py-4">
-            <h1 class="text-3xl font-extrabold text-[#13B5EA]">VIIsual</h1>
+            <!-- Header Color Changed to Xero Pink -->
+            <h1 class="text-3xl font-extrabold text-[#FF8F9C]">VIIsual</h1>
             <div class="flex items-center space-x-4">
                 <button onclick="triggerTestPopup()" class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded hover:bg-gray-200 transition">Test Pop-up</button>
                 <div id="realTimeClock" class="text-xl font-bold text-[#0B1E33] font-mono">--:--:--</div>
